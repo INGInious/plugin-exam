@@ -1,0 +1,78 @@
+$def with (plugin_path, course, activated, password, data, errors, saved)
+
+$#
+$# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+$# more information about the licensing of this file.
+$#
+
+$var title: $:course.get_name() - Contest settings
+
+$var Column: $:template_helper.call('course_admin_menu',course=course,current='exam')
+
+$def NavbarF():
+    <ol class="nav navbar-nav nav-breadcrumb">
+        <li><a href="$get_homepath()/course/$course.get_id()">$course.get_name()</a></li>
+        <li><a href="$get_homepath()/admin/$course.get_id()" title="Administration" data-toggle="tooltip" data-placement="bottom">
+            <i class="fa fa-user-secret"></i></a></li>
+        <li class="active"><a href="#"><i class="fa fa-gavel"></i> Exam accesses <span class="sr-only">(current)</span></a></li>
+    </ol>
+$var Navbar: $:NavbarF()
+
+<h2>Exam accesses</h2>
+$if errors is not None:
+    $for error in errors:
+        <div class="alert alert-danger" role="alert">$error</div>
+$elif saved:
+    <div class="alert alert-success" role="alert">Settings saved.</div>
+
+<div class="panel panel-default group">
+    <div class="panel-heading clearfix" role="tab">
+        <h4 class="panel-title">
+            Exam access settings
+        </h4>
+    </div>
+    <div class="panel-body">
+        <form method="post">
+            <input type="hidden" name="action" value="config" />
+            <div class="row form-group">
+                <label for="pass" class="col-sm-2 control-label">Exam active</label>
+                <div class="col-sm-10">
+                     <label>
+                        <input type="radio" value="true" name="active"
+                            $if activated:
+                                checked="checked"
+                        /> Yes
+                    </label><br/>
+                    <label>
+                        <input type="radio" value="false" name="active" id="active"
+                            $if not activated:
+                                checked="checked"
+                        /> No
+                    </label>
+                </div>
+            </div>
+            <div class="row form-group">
+                <label for="pass" class="col-sm-2 control-label">Finalization password</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="password" name="password" placeholder="Finalization password" value="$password">
+                </div>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-block btn-primary">
+                    <i class="fa fa-save"></i> Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-md-6">
+        $:template_helper.get_custom_renderer(plugin_path, False).table(course, data, True)
+    </div>
+    <div class="col-md-6">
+        $:template_helper.get_custom_renderer(plugin_path, False).table(course, data, False)
+    </div>
+</div>

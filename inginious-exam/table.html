@@ -1,0 +1,31 @@
+$def with(course, user_data, authorized_users)
+<form method="post" id="$('finalize' if authorized_users else 'cancel')">
+    <input type="hidden" name="action" value="$('finalize' if authorized_users else 'cancel')" />
+    <input type="hidden" id="username" name="username" />
+    <div class="panel panel-$('warning' if authorized_users else 'success') group">
+        <div class="panel-heading clearfix" role="tab">
+            <h4 class="panel-title">
+                $('Still in exam' if authorized_users else 'Terminated')
+            </h4>
+        </div>
+        <ul class="list-group">
+            $for user in user_data.values():
+                $if user["finalized"] != authorized_users:
+                    <li class="list-group-item group-entry">
+                        $if user["realname"]:
+                             $user["realname"] ($user["username"])
+                        $else:
+                            $user["username"]
+
+                        $if authorized_users:
+                            <a class="pull-right" id="group_delete" href="#" onclick="$$('#finalize').find('#username').val('$user['username']'); $$('#finalize').submit()" data-toggle="tooltip" data-placement="left" title="Terminate exam">
+                                <i class="fa fa-arrow-right"></i>
+                            </a>
+                        $else:
+                            <a class="pull-right" id="group_delete" href="#" onclick="$$('#cancel').find('#username').val('$user['username']'); $$('#cancel').submit()" data-toggle="tooltip" data-placement="left" title="Cancel">
+                                <i class="fa fa-remove"></i>
+                            </a>
+                    </li>
+        </ul>
+    </div>
+</form>

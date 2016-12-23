@@ -1,0 +1,69 @@
+$def with(course)
+
+$#
+$# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
+$# more information about the licensing of this file.
+$#
+
+$if not user_manager.has_staff_rights_on_course(course):
+    <h3>Examination</h3>
+    <div class="list-group">
+        <a href="#" class="list-group-item list-group-item-danger" data-toggle="modal" data-target="#examModal">
+            <i class="fa fa-gavel fa-fw"></i>
+            Finalize exam
+        </a>
+    </div>
+    <div class="modal fade" id="examModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="finalize" action="$get_homepath()/exam/$course.get_id()" method="post">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Finalize exam</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div id="message">
+
+                        </div>
+                        <p>This will prevent you from making any further change to your submissions.</p>
+                        <p>To continue, please ask the password to your teaching assistant.</p>
+                        <div class="form-group">
+                            <label for="password" class="form-control-label">Finalization password:</label>
+                            <input type="text" class="form-control" id="password" name="password">
+                            <input type="hidden" name="action" value="finalize"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" onclick="event.preventDefault();formSubmit();" class="btn btn-danger">Finalize exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+    function formSubmit() {
+        $$('#finalize').ajaxSubmit({
+            dataType: 'json',
+            success: function (data) {
+                if(!("status" in data)||(data["status"] == "error")) {
+                    dispMessage("danger", "An error occured suring the process. Ask your teaching assistant for help !");
+                } else if(data["status"] == "wrong_password") {
+                    dispMessage("danger", "Wrong password !");
+                } else if(data["status"] == "done") {
+                    dispMessage("success", "Your exam is finalized ! Redirecting to main page... ");
+                    window.setTimeout(function() {
+                        window.location.href = '$get_homepath()/';
+                    }, 2000);
+                }
+            }
+        });
+        return false;
+    }
+    function dispMessage(type, message) {
+        $$("#message").html('<div class="alert alert-' + type + ' alert-dismissible">' +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+                message + '</div>')
+    }
+    </script>
