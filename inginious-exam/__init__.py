@@ -35,11 +35,21 @@ class ExamAdminPage(INGIniousAdminPage):
             course_content["exam_active"] = True if input_data["active"] == "true" else False
             self.course_factory.update_course_descriptor_content(courseid, course_content)
         elif input_data.get("action", "") == "finalize":
-            self.database.exam.insert({"username": input_data["username"], "courseid": courseid, "finalized": True})
+            if input_data["username"] == "*":
+                users = self.user_manager.get_course_registered_users(course, False)
+            else:
+                users = [input_data["username"]]
+
+            for username in users:
+                self.database.exam.insert({"username": username, "courseid": courseid, "finalized": True})
+
             user_status_cache[(courseid, input_data["username"])] = True
             saved = True
         elif input_data.get("action", "") == "cancel":
-            self.database.exam.delete_one({"username": input_data["username"], "courseid": courseid})
+            if input_data["username"] == "*":
+                self.database.exam.delete_many({"courseid": courseid})
+            else:
+                self.database.exam.delete_one({"username": input_data["username"], "courseid": courseid})
             user_status_cache[(courseid, input_data["username"])] = False
             saved = True
 

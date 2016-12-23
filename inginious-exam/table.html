@@ -6,6 +6,14 @@ $def with(course, user_data, authorized_users)
         <div class="panel-heading clearfix" role="tab">
             <h4 class="panel-title">
                 $('Still in exam' if authorized_users else 'Terminated')
+                $if authorized_users:
+                    <a class="pull-right" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
+                        <i class="fa fa-arrow-right"></i>
+                    </a>
+                $else:
+                    <a class="pull-right" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
+                        <i class="fa fa-remove"></i>
+                    </a>
             </h4>
         </div>
         <ul class="list-group">
@@ -29,3 +37,25 @@ $def with(course, user_data, authorized_users)
         </ul>
     </div>
 </form>
+
+<div class="modal fade" id="$('finalize' if authorized_users else 'cancel')_modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <input type="hidden" name="action" value="$('finalize' if authorized_users else 'cancel')" />
+                <input type="hidden" id="username" name="username" value="*"/>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">$('Finalize' if authorized_users else 'Cancel')all</h4>
+                </div>
+                <div class="modal-body">
+                    <p>This will apply the action to all listed students. Do you want to continue ?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Apply to all</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
