@@ -111,6 +111,8 @@ def apply_restriction(courseid, data, database, user_manager):
         if user_status_cache[(courseid, username)]:
             data["accessible"] = False
 
+        data["allow_unregister"] = False
+
 
 def add_admin_menu(course):
     """ Add a menu for the contest settings in the administration """
