@@ -11,6 +11,7 @@ import json
 from collections import OrderedDict
 from inginious.frontend.webapp.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.webapp.pages.utils import INGIniousAuthPage
+from inginious.frontend.webapp.accessible_time import AccessibleTime
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -98,8 +99,9 @@ class ExamPage(INGIniousAuthPage):
         return json.dumps({"status": "error"})
 
 
-def apply_restriction(courseid, data, database, user_manager):
-    if data.get("exam_active", False):
+def course_accessibility(course, default_value, database, user_manager):
+    if course.get_descriptor().get("exam_active", False):
+        courseid = course.get_id()
         username = user_manager.session_username()
 
         if (courseid, username) not in user_status_cache:
@@ -109,9 +111,9 @@ def apply_restriction(courseid, data, database, user_manager):
                 user_status_cache[(courseid, username)] = False
 
         if user_status_cache[(courseid, username)]:
-            data["accessible"] = False
+            return AccessibleTime(False)
 
-        data["allow_unregister"] = False
+    return default_value
 
 
 def add_admin_menu(course):
@@ -133,8 +135,9 @@ def init(plugin_manager, course_factory, client, config):
 
     plugin_manager.add_page("/admin/([^/]+)/exam", ExamAdminPage)
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)
-    plugin_manager.add_hook('modify_course_data', lambda courseid, data: apply_restriction(courseid, data,
-                                                                                           plugin_manager.get_database(),
-                                                                                           plugin_manager.get_user_manager()))
+    plugin_manager.add_hook('course_accessibility', lambda course, default: course_accessibility(course, default,
+                                                                                                 plugin_manager.get_database(),
+                                                                                                 plugin_manager.get_user_manager()))
+    plugin_manager.add_hook('course_allow_unregister', lambda course, default: False)
     plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_page("/exam/([^/]+)", ExamPage)
