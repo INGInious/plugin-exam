@@ -18,7 +18,7 @@ $def with(course, user_data, authorized_users)
         </div>
         <ul class="list-group">
             $for user in user_data.values():
-                $if user["finalized"] != authorized_users:
+                $if ("seb_hash" in user) != authorized_users:
                     <li class="list-group-item group-entry">
                         $if user["realname"]:
                              $user["realname"] ($user["username"])

@@ -43,16 +43,24 @@ class ExamAdminPage(INGIniousAdminPage):
                 users = [input_data["username"]]
 
             for username in users:
-                self.database.exam.insert({"username": username, "courseid": courseid, "finalized": True})
+                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content["seb_hash"]}}, upsert=True)
+                user_status_cache[(courseid, username)] = True
 
-            user_status_cache[(courseid, input_data["username"])] = True
             saved = True
         elif input_data.get("action", "") == "cancel":
             if input_data["username"] == "*":
                 self.database.exam.delete_many({"courseid": courseid})
             else:
                 self.database.exam.delete_one({"username": input_data["username"], "courseid": courseid})
-            user_status_cache[(courseid, input_data["username"])] = False
+
+            if input_data["username"] == "*":
+                users = self.user_manager.get_course_registered_users(course, False)
+            else:
+                users = [input_data["username"]]
+
+            for username in users:
+                user_status_cache[(courseid, username)] = False
+
             saved = True
 
         return self.display_page(course, error, saved)
@@ -65,7 +73,7 @@ class ExamAdminPage(INGIniousAdminPage):
             key=lambda k: k[1][0] if k[1] is not None else "")
 
         user_data = OrderedDict([(username, {
-            "username": username, "realname": user[0] if user is not None else "", "finalized": False}) for
+            "username": username, "realname": user[0] if user is not None else ""}) for
                                  username, user in users])
 
         for entry in self.database.exam.find({"username": {"$in": list(user_data.keys())}}):
@@ -106,7 +114,7 @@ class ExamPage(INGIniousAuthPage):
             elif web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "") != course_content.get("seb_hash", ""):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
-                self.database.exam.insert({"username": username, "courseid": courseid, "finalized": True})
+                self.database.exam.insert({"username": username, "courseid": courseid, "seb_hash": web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")})
                 user_status_cache[(courseid, username)] = True
 
         return self.display_page(course, error)
@@ -130,11 +138,11 @@ def get_user_status(courseid, username, database, user_manager):
     return user_status_cache[(courseid, username)]
 
 
-def course_accessibility(course, default_value, database, user_manager):
+def course_accessibility(course, default_value, course_factory, database, user_manager):
+    mysebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
     descriptor = course.get_descriptor()
     if descriptor.get("exam_active", False):
         # Check for SEB
-        mysebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
         if descriptor.get("seb_hash", "") != mysebhash:
             return AccessibleTime(False)
 
@@ -144,6 +152,15 @@ def course_accessibility(course, default_value, database, user_manager):
 
         if get_user_status(courseid, username, database, user_manager):
             return AccessibleTime(False)
+    elif mysebhash:
+        # We are in SEB : check if the current hash corresponds to a finished active exam:
+        finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
+        if len(finished_exams):
+            for finished_exam in finished_exams:
+                if finished_exam.get("seb_hash") == mysebhash:
+                    finished_exam_course = course_factory.get_course(finished_exam["courseid"])
+                    if finished_exam_course.get_descriptor().get("exam_active", False):
+                        raise web.seeother("/exam/" + finished_exam["courseid"])
 
     return default_value
 
@@ -174,6 +191,7 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/admin/([^/]+)/exam", ExamAdminPage)
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)
     plugin_manager.add_hook('course_accessibility', lambda course, default: course_accessibility(course, default,
+                                                                                                 course_factory,
                                                                                                  plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager()))
     plugin_manager.add_hook('course_allow_unregister', lambda course, default: False if course.get_descriptor().get("exam_active", False) else default)
