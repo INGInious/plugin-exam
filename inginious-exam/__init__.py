@@ -167,9 +167,11 @@ def course_accessibility(course, default_value, course_factory, database, user_m
 def main_menu(template_helper, database, user_manager, course_factory):
     if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
         # We are in SEB : automatic registration
-        for course in course_factory.get_all_courses():
-            if check_key(course.get("seb_hash", "")) and not user_manager.course_is_user_registered(course):
-                user_manager.course_register_user(course, force=True)
+        for course in course_factory.get_all_courses().values():
+            if check_key(course.get_descriptor().get("seb_hash", "")):
+                if not user_manager.course_is_user_registered(course):
+                    user_manager.course_register_user(course, force=True)
+                web.seeother("/course/" + course.get_id())
     return ""
 
 
@@ -226,7 +228,7 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_hook('javascript_header', lambda : javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
-    plugin_manager.add_hook('main_menu', lambda template_helper: course_accessibility(template_helper,
+    plugin_manager.add_hook('main_menu', lambda template_helper: main_menu(template_helper,
                                                                                       plugin_manager.get_database(),
                                                                                       plugin_manager.get_user_manager(),
                                                                                       course_factory))
