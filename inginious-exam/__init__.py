@@ -165,9 +165,9 @@ def course_accessibility(course, default_value, course_factory, database, user_m
         finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
         if len(finished_exams):
             for finished_exam in finished_exams:
-                if check_key(finished_exam.get("seb_hash")) and not user_manager.has_staff_rights_on_course():
+                if check_key(finished_exam.get("seb_hash")):
                     finished_exam_course = course_factory.get_course(finished_exam["courseid"])
-                    if finished_exam_course.get_descriptor().get("exam_active", False):
+                    if finished_exam_course.get_descriptor().get("exam_active", False) and not user_manager.has_staff_rights_on_course(finished_exam_course):
                         raise web.seeother("/exam/" + finished_exam["courseid"])
 
     return default_value
