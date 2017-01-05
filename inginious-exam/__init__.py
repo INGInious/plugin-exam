@@ -204,5 +204,5 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/exam/([^/]+)", ExamPage)
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
-    plugin_manager.add_hook('/seb-quit', SebQuitPage)
+    plugin_manager.add_page('/seb-quit', SebQuitPage)
 
