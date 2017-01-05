@@ -7,7 +7,7 @@
 
 import os
 import web
-import json
+import hashlib
 from collections import OrderedDict
 from inginious.frontend.webapp.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.webapp.pages.utils import INGIniousAuthPage
@@ -16,6 +16,14 @@ from inginious.frontend.webapp.accessible_time import AccessibleTime
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 user_status_cache = {}
+
+def check_key(course_key):
+    if not course_key:
+        return True
+    else:
+        request_hash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
+        return hashlib.sha256(web.ctx.home + web.ctx.fullpath + course_key).hexdigest() == request_hash
+
 
 class ExamAdminPage(INGIniousAdminPage):
     """ A simple demo page showing how to add a new page """
@@ -79,7 +87,7 @@ class ExamAdminPage(INGIniousAdminPage):
         for entry in self.database.exam.find({"username": {"$in": list(user_data.keys())}}):
             user_data[entry['username']].update(entry)
 
-        mysebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
+        mysebhash = hashlib.sha256(web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).hexdigest()
 
         tpl = self.template_helper.get_custom_renderer(PATH_TO_PLUGIN).admin
 
@@ -111,10 +119,10 @@ class ExamPage(INGIniousAuthPage):
             is_admin = self.user_manager.has_staff_rights_on_course(course)
             if input_data.get("password", "") != course_content.get("exam_password", ""):
                 error = "Wrong password!"
-            elif web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "") != course_content.get("seb_hash", ""):
+            elif check_key(course_content.get("seb_hash", "")):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
-                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")}}, upsert=True)
+                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content.get("seb_hash", "")}}, upsert=True)
                 user_status_cache[(courseid, username)] = True
 
         return self.display_page(course, error)
@@ -139,11 +147,10 @@ def get_user_status(courseid, username, database, user_manager):
 
 
 def course_accessibility(course, default_value, course_factory, database, user_manager):
-    mysebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
     descriptor = course.get_descriptor()
     if descriptor.get("exam_active", False):
         # Check for SEB
-        if descriptor.get("seb_hash", "") != mysebhash:
+        if check_key(descriptor.get("seb_hash", "")):
             return AccessibleTime(False)
 
         # Check for exam finalization
@@ -152,12 +159,12 @@ def course_accessibility(course, default_value, course_factory, database, user_m
 
         if get_user_status(courseid, username, database, user_manager):
             return AccessibleTime(False)
-    elif mysebhash:
+    elif web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
         # We are in SEB : check if the current hash corresponds to a finished active exam:
         finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
         if len(finished_exams):
             for finished_exam in finished_exams:
-                if finished_exam.get("seb_hash") == mysebhash:
+                if check_key(finished_exam.get("seb_hash")):
                     finished_exam_course = course_factory.get_course(finished_exam["courseid"])
                     if finished_exam_course.get_descriptor().get("exam_active", False):
                         raise web.seeother("/exam/" + finished_exam["courseid"])
