@@ -22,7 +22,7 @@ def check_key(course_key):
         return True
     else:
         request_hash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
-        return hashlib.sha256(web.ctx.home + web.ctx.fullpath + course_key).hexdigest() == request_hash
+        return hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_key).encode('utf-8')).hexdigest() == request_hash
 
 
 class ExamAdminPage(INGIniousAdminPage):
@@ -87,7 +87,7 @@ class ExamAdminPage(INGIniousAdminPage):
         for entry in self.database.exam.find({"username": {"$in": list(user_data.keys())}}):
             user_data[entry['username']].update(entry)
 
-        mysebhash = hashlib.sha256(web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).hexdigest()
+        mysebhash = hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
 
         tpl = self.template_helper.get_custom_renderer(PATH_TO_PLUGIN).admin
 
