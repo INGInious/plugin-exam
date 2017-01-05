@@ -88,11 +88,12 @@ class ExamAdminPage(INGIniousAdminPage):
             user_data[entry['username']].update(entry)
 
         mysebhash = hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
+        thesebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
 
         tpl = self.template_helper.get_custom_renderer(PATH_TO_PLUGIN).admin
 
         return tpl(PATH_TO_PLUGIN, course, course_content.get("exam_active", False),
-                   course_content.get("exam_password", ""), course_content.get("seb_hash", ""), mysebhash, user_data, errors, saved)
+                   course_content.get("exam_password", ""), course_content.get("seb_hash", ""), mysebhash, thesebhash, user_data, errors, saved)
 
 
 class ExamPage(INGIniousAuthPage):

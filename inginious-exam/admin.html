@@ -1,4 +1,4 @@
-$def with (plugin_path, course, activated, password, authorized_sebhash, mysebhash, data, errors, saved)
+$def with (plugin_path, course, activated, password, authorized_key, mysebhash, thesebhash, data, errors, saved)
 
 $#
 $# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
@@ -20,10 +20,12 @@ $var Navbar: $:NavbarF()
 
 <h2>Exam access - <a href="/seb-quit">Quit SEB</a></h2>
 $if mysebhash:
-    <div class="alert alert-warning alert-dismissible">
+        $ correct = (mysebhash == thesebhash)
+    <div class="alert $('alert-warning' if not correct else 'alert-success') alert-dismissible">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <p><strong>You are currently browing INGInious under Safe Exam Browser</strong></p>
-        <p>Your request hash is : $mysebhash</p>
+        <p>The computed request hash is : $mysebhash</p>
+        <p>The expected request hash is : $thesebhash</p>
     </div>
 
 $if errors is not None:
@@ -67,7 +69,7 @@ $elif saved:
             <div class="row form-group">
                 <label for="pass" class="col-sm-2 control-label">Authorized SEB hash</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$authorized_sebhash">
+                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$authorized_key">
                 </div>
             </div>
             <div>
