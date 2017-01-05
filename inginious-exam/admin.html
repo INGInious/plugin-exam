@@ -19,7 +19,7 @@ $def NavbarF():
 $var Navbar: $:NavbarF()
 
 <h2>Exam access - <a href="/seb-quit">Quit SEB</a></h2>
-$if mysebhash:
+$if thesebhash:
         $ correct = (mysebhash == thesebhash)
     <div class="alert $('alert-warning' if not correct else 'alert-success') alert-dismissible">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
