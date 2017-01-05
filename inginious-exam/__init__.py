@@ -160,18 +160,30 @@ def course_accessibility(course, default_value, course_factory, database, user_m
 
         if get_user_status(courseid, username, database, user_manager):
             return AccessibleTime(False)
-    elif web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
-        # We are in SEB : check if the current hash corresponds to a finished active exam:
-        finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
-        if len(finished_exams):
-            for finished_exam in finished_exams:
-                if check_key(finished_exam.get("seb_hash")):
-                    finished_exam_course = course_factory.get_course(finished_exam["courseid"])
-                    if finished_exam_course.get_descriptor().get("exam_active", False) and not user_manager.has_staff_rights_on_course(finished_exam_course):
-                        raise web.seeother("/exam/" + finished_exam["courseid"])
 
     return default_value
 
+
+def main_menu(template_helper, database, user_manager, course_factory):
+    if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
+        # We are in SEB : automatic registration
+        for course in course_factory.get_all_courses():
+            if check_key(course.get("seb_hash", "")) and not user_manager.course_is_user_registered(course):
+                user_manager.course_register_user(course, force=True)
+    return ""
+
+
+def javascript_header(database, user_manager, course_factory):
+    if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
+        # We are in SEB : check if the current hash corresponds to a finished active exam:
+        finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
+        for finished_exam in finished_exams:
+            if check_key(finished_exam.get("seb_hash", "")):
+                finished_exam_course = course_factory.get_course(finished_exam["courseid"])
+                if finished_exam_course.get_descriptor().get("exam_active",
+                                                             False) and not user_manager.has_staff_rights_on_course(
+                        finished_exam_course):
+                    raise web.seeother("/exam/" + finished_exam["courseid"])
 
 def add_admin_menu(course):
     """ Add a menu for the contest settings in the administration """
@@ -211,4 +223,10 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
     plugin_manager.add_page('/seb-quit', SebQuitPage)
+    plugin_manager.add_hook('javascript_header', lambda : javascript_header(plugin_manager.get_database(),
+                                                                                                 plugin_manager.get_user_manager(), course_factory))
 
+    plugin_manager.add_hook('main_menu', lambda template_helper: course_accessibility(template_helper,
+                                                                                      plugin_manager.get_database(),
+                                                                                      plugin_manager.get_user_manager(),
+                                                                                      course_factory))
