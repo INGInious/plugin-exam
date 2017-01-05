@@ -161,6 +161,8 @@ def course_accessibility(course, default_value, course_factory, database, user_m
                     finished_exam_course = course_factory.get_course(finished_exam["courseid"])
                     if finished_exam_course.get_descriptor().get("exam_active", False):
                         raise web.seeother("/exam/" + finished_exam["courseid"])
+        else:  # no exam programmed with this
+            raise web.seeother("/seb-quit")
 
     return default_value
 
