@@ -120,7 +120,7 @@ class ExamPage(INGIniousAuthPage):
             is_admin = self.user_manager.has_staff_rights_on_course(course)
             if input_data.get("password", "") != course_content.get("exam_password", ""):
                 error = "Wrong password!"
-            elif check_key(course_content.get("seb_hash", "")):
+            elif not check_key(course_content.get("seb_hash", "")):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
                 self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content.get("seb_hash", "")}}, upsert=True)
@@ -151,7 +151,7 @@ def course_accessibility(course, default_value, course_factory, database, user_m
     descriptor = course.get_descriptor()
     if descriptor.get("exam_active", False):
         # Check for SEB
-        if check_key(descriptor.get("seb_hash", "")):
+        if not check_key(descriptor.get("seb_hash", "")):
             return AccessibleTime(False)
 
         # Check for exam finalization
