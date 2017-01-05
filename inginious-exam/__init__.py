@@ -114,7 +114,7 @@ class ExamPage(INGIniousAuthPage):
             elif web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "") != course_content.get("seb_hash", ""):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
-                self.database.exam.insert({"username": username, "courseid": courseid, "seb_hash": web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")})
+                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")}}, upsert=True)
                 user_status_cache[(courseid, username)] = True
 
         return self.display_page(course, error)
