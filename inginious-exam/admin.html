@@ -1,4 +1,4 @@
-$def with (plugin_path, course, activated, password, data, errors, saved)
+$def with (plugin_path, course, activated, password, authorized_sebhash, mysebhash, data, errors, saved)
 
 $#
 $# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
@@ -18,7 +18,14 @@ $def NavbarF():
     </ol>
 $var Navbar: $:NavbarF()
 
-<h2>Exam accesses</h2>
+<h2>Exam access - <a href="/seb-quit">Quit SEB</a></h2>
+$if mysebhash:
+    <div class="alert alert-warning alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <p><strong>You are currently browing INGInious under Safe Exam Browser</strong></p>
+        <p>Your hash is : $mysebhash</p>
+    </div>
+
 $if errors is not None:
     $for error in errors:
         <div class="alert alert-danger" role="alert">$error</div>
@@ -41,7 +48,7 @@ $elif saved:
                         <input type="radio" value="true" name="active"
                             $if activated:
                                 checked="checked"
-                        /> Yes
+                        /> Yes. This will override the course accessibility settings and prevent student unregistration.
                     </label><br/>
                     <label>
                         <input type="radio" value="false" name="active" id="active"
@@ -54,8 +61,18 @@ $elif saved:
             <div class="row form-group">
                 <label for="pass" class="col-sm-2 control-label">Finalization password</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="password" name="password" placeholder="Finalization password" value="$password">
+                    <input type="text" class="form-control" id="password" name="password" placeholder="Leave empty for no check" value="$password">
                 </div>
+            </div>
+            <div class="row form-group">
+                <label for="pass" class="col-sm-2 control-label">Authorized SEB hash</label>
+                <div class="col-sm-7">
+                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$authorized_sebhash">
+                </div>
+                <div class="col-sm-3">
+                    <a class="btn btn-block btn-warning" onclick="$$('#sebhash').val($$('#mysebhash').val())"><i class="fa fa-copy"></i> Copy my hash</a>
+                </div>
+                <input id="mysebhash" type="hidden" name="mysebhash" placeholder="Leave empty for no check" value="$mysebhash">
             </div>
             <div>
                 <button type="submit" class="btn btn-block btn-primary">
