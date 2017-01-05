@@ -186,6 +186,9 @@ class FakeCSSPage(object):
         if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
             return "#logoff_button {display:none;}"
 
+class SebQuitPage(object):
+    def GET(self):
+        return "<html><body><p>No exam : <a href='" + web.ctx.homepath +"/seb-quit'>click here to exit</a></p></body></html>"
 
 def init(plugin_manager, course_factory, client, config):
     """ Init the plugin """
@@ -201,4 +204,5 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/exam/([^/]+)", ExamPage)
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
+    plugin_manager.add_hook('/seb-quit', SebQuitPage)
 
