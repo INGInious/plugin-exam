@@ -169,9 +169,9 @@ def main_menu(template_helper, database, user_manager, course_factory):
         # We are in SEB : automatic registration
         for course in course_factory.get_all_courses().values():
             if check_key(course.get_descriptor().get("seb_hash", "")):
-                if not user_manager.course_is_user_registered(course):
-                    user_manager.course_register_user(course, force=True)
-                web.seeother("/course/" + course.get_id())
+                if not user_manager.course_is_user_registered(course) and not user_manager.has_staff_rights_on_course(course):
+                   user_manager.course_register_user(course, force=True)
+                   web.seeother("/course/" + course.get_id())
     return ""
 
 
@@ -186,6 +186,7 @@ def javascript_header(database, user_manager, course_factory):
                                                              False) and not user_manager.has_staff_rights_on_course(
                         finished_exam_course):
                     raise web.seeother("/exam/" + finished_exam["courseid"])
+    return ""
 
 def add_admin_menu(course):
     """ Add a menu for the contest settings in the administration """
