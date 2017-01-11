@@ -222,7 +222,7 @@ def init(plugin_manager, course_factory, client, config):
                                                                                                  plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager()))
     plugin_manager.add_hook('course_allow_unregister', lambda course, default: False if course.get_descriptor().get("exam_active", False) else default)
-    add_hook(plugin_manager, 'course_menu', course_menu)
+    plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_page("/exam/([^/]+)", ExamPage)
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
@@ -230,7 +230,7 @@ def init(plugin_manager, course_factory, client, config):
     add_hook(plugin_manager, 'javascript_header', lambda : javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
-    plugin_manager.add_hook('main_menu', lambda template_helper: main_menu(template_helper,
+    add_hook(plugin_manager, 'main_menu', lambda template_helper: main_menu(template_helper,
                                                                                       plugin_manager.get_database(),
                                                                                       plugin_manager.get_user_manager(),
                                                                                       course_factory))
