@@ -84,7 +84,7 @@ class ExamAdminPage(INGIniousAdminPage):
             "username": username, "realname": user[0] if user is not None else ""}) for
                                  username, user in users])
 
-        for entry in self.database.exam.find({"username": {"$in": list(user_data.keys())}}):
+        for entry in self.database.exam.find({"courseid": course.get_id(), "username": {"$in": list(user_data.keys())}}):
             user_data[entry['username']].update(entry)
 
         mysebhash = hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
@@ -168,7 +168,8 @@ def main_menu(template_helper, database, user_manager, course_factory):
     if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
         # We are in SEB : automatic registration
         for course in course_factory.get_all_courses().values():
-            if check_key(course.get_descriptor().get("seb_hash", "")):
+            descriptor = course.get_descriptor()
+            if descriptor.get("exam_active") and check_key(descriptor.get("seb_hash", "")):
                 if not user_manager.course_is_user_registered(course) and not user_manager.has_staff_rights_on_course(course):
                    user_manager.course_register_user(course, force=True)
                 raise web.seeother("/course/" + course.get_id())
