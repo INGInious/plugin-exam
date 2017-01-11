@@ -206,7 +206,7 @@ def course_menu(course, template_helper):
 class FakeCSSPage(object):
     def GET(self):
         if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
-            return "#logoff_button {display:none;}"
+            return "#logoff_button {display:none;} a.mailto {display:none;}"
 
 class SebQuitPage(object):
     def GET(self):
@@ -222,15 +222,21 @@ def init(plugin_manager, course_factory, client, config):
                                                                                                  plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager()))
     plugin_manager.add_hook('course_allow_unregister', lambda course, default: False if course.get_descriptor().get("exam_active", False) else default)
-    plugin_manager.add_hook('course_menu', course_menu)
+    add_hook(plugin_manager, 'course_menu', course_menu)
     plugin_manager.add_page("/exam/([^/]+)", ExamPage)
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
     plugin_manager.add_page('/seb-quit', SebQuitPage)
-    plugin_manager.add_hook('javascript_header', lambda : javascript_header(plugin_manager.get_database(),
+    add_hook(plugin_manager, 'javascript_header', lambda : javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
     plugin_manager.add_hook('main_menu', lambda template_helper: main_menu(template_helper,
                                                                                       plugin_manager.get_database(),
                                                                                       plugin_manager.get_user_manager(),
                                                                                       course_factory))
+
+def add_hook(plugin_manager, name, callback):
+    """ With no exception handling """
+    hook_list = plugin_manager.hooks.get(name, [])
+    hook_list.append(callback)
+    plugin_manager.hooks[name] = hook_list
