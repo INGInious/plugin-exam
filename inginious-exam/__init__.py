@@ -181,11 +181,9 @@ def javascript_header(database, user_manager, course_factory):
         # We are in SEB : check if the current hash corresponds to a finished active exam:
         finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
         for finished_exam in finished_exams:
-            if check_key(finished_exam.get("seb_hash", "")):
+            if finished_exam.get("seb_hash", "") and check_key(finished_exam.get("seb_hash", "")):
                 finished_exam_course = course_factory.get_course(finished_exam["courseid"])
-                if finished_exam_course.get_descriptor().get("exam_active",
-                                                             False) and not user_manager.has_staff_rights_on_course(
-                        finished_exam_course):
+                if finished_exam_course.get_descriptor().get("exam_active", False) and not user_manager.has_staff_rights_on_course(finished_exam_course):
                     raise web.seeother("/exam/" + finished_exam["courseid"])
     return ""
 
