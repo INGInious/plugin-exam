@@ -169,7 +169,7 @@ def main_menu(template_helper, database, user_manager, course_factory):
         # We are in SEB : automatic registration
         for course in course_factory.get_all_courses().values():
             descriptor = course.get_descriptor()
-            if descriptor.get("exam_active") and check_key(descriptor.get("seb_hash", "")):
+            if descriptor.get("exam_active", False) and check_key(descriptor.get("seb_hash", "")):
                 if not user_manager.course_is_user_registered(course) and not user_manager.has_staff_rights_on_course(course):
                    user_manager.course_register_user(course, force=True)
                 raise web.seeother("/course/" + course.get_id())
