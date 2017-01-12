@@ -206,6 +206,8 @@ class FakeCSSPage(object):
         if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
             return "#logoff_button {display:none;} a.mailto {display:none;}"
 
+        return ""
+
 class SebQuitPage(object):
     def GET(self):
         return "<html><body><p><a href='" + web.ctx.homepath +"/seb-quit'>Click here to exit</a></p></body></html>"
