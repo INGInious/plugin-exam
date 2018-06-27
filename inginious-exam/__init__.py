@@ -5,13 +5,15 @@
 
 """ A demo plugin that adds a page """
 
-import os
-import web
 import hashlib
+import os
 from collections import OrderedDict
-from inginious.frontend.webapp.pages.course_admin.utils import INGIniousAdminPage
-from inginious.frontend.webapp.pages.utils import INGIniousAuthPage
-from inginious.frontend.webapp.accessible_time import AccessibleTime
+
+import web
+
+from inginious.frontend.accessible_time import AccessibleTime
+from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.pages.utils import INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
@@ -227,16 +229,11 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
     plugin_manager.add_page('/seb-quit', SebQuitPage)
-    add_hook(plugin_manager, 'javascript_header', lambda : javascript_header(plugin_manager.get_database(),
+    plugin_manager.add_hook('javascript_header', lambda: javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
-    add_hook(plugin_manager, 'main_menu', lambda template_helper: main_menu(template_helper,
+    plugin_manager.add_hook('main_menu', lambda template_helper: main_menu(template_helper,
                                                                                       plugin_manager.get_database(),
                                                                                       plugin_manager.get_user_manager(),
                                                                                       course_factory))
 
-def add_hook(plugin_manager, name, callback):
-    """ With no exception handling """
-    hook_list = plugin_manager.hooks.get(name, [])
-    hook_list.append(callback)
-    plugin_manager.hooks[name] = hook_list
