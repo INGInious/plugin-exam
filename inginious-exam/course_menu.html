@@ -7,12 +7,12 @@ $#
 
 $if not user_manager.has_staff_rights_on_course(course):
     <h3>Examination</h3>
-    <div class="list-group">
-        <a href="" class="list-group-item list-group-item-info" target="_blank">
+    <div class="list-group mb-3">
+        <a href="" class="list-group-item list-group-item-info list-group-item-action" target="_blank">
             <i class="fa fa-copy fa-fw"></i>
             Duplicate window
         </a>
-        <a href="#" class="list-group-item list-group-item-danger" data-toggle="modal" data-target="#examModal">
+        <a href="#" class="list-group-item list-group-item-danger list-group-item-action" data-toggle="modal" data-target="#examModal">
             <i class="fa fa-gavel fa-fw"></i>
             Finalize exam
         </a>
@@ -22,8 +22,8 @@ $if not user_manager.has_staff_rights_on_course(course):
             <div class="modal-content">
                 <form id="finalize" action="$get_homepath()/exam/$course.get_id()" method="post">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                         <h4 class="modal-title">Finalize exam</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="action" value="finalize"/>
@@ -43,3 +43,7 @@ $if not user_manager.has_staff_rights_on_course(course):
             </div>
         </div>
     </div>
+
+<script>
+    $$("#examModal").detach().appendTo('.card');
+</script>

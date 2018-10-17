@@ -2,24 +2,22 @@ $def with(course, user_data, authorized_users)
 <form method="post" id="$('finalize' if authorized_users else 'cancel')">
     <input type="hidden" name="action" value="$('finalize' if authorized_users else 'cancel')" />
     <input type="hidden" id="username" name="username" />
-    <div class="panel panel-$('warning' if authorized_users else 'success') group">
-        <div class="panel-heading clearfix" role="tab">
-            <h4 class="panel-title">
-                $('Still in exam' if authorized_users else 'Terminated')
-                $if authorized_users:
-                    <a class="pull-right" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
-                        <i class="fa fa-arrow-right"></i>
-                    </a>
-                $else:
-                    <a class="pull-right" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
-                        <i class="fa fa-remove"></i>
-                    </a>
-            </h4>
+    <div class="card border-$('warning' if authorized_users else 'success') group">
+        <div class="card-header text-white bg-$('warning' if authorized_users else 'success')" role="tab">
+            $('Still in exam' if authorized_users else 'Terminated')
+            $if authorized_users:
+                <a class="pull-right text-white" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
+                    <i class="fa fa-arrow-right"></i>
+                </a>
+            $else:
+                <a class="pull-right text-white" id="group_delete" href="#" data-toggle="modal" data-target="#$('finalize' if authorized_users else 'cancel')_modal">
+                    <i class="fa fa-remove"></i>
+                </a>
         </div>
-        <ul class="list-group">
+        <ul class="list-group list-group-flush">
             $for user in user_data.values():
                 $if ("seb_hash" in user) != authorized_users:
-                    <li class="list-group-item group-entry">
+                    <li class="list-group-item">
                         $if user["realname"]:
                              $user["realname"] ($user["username"])
                         $else:
@@ -45,8 +43,8 @@ $def with(course, user_data, authorized_users)
                 <input type="hidden" name="action" value="$('finalize' if authorized_users else 'cancel')" />
                 <input type="hidden" id="username" name="username" value="*"/>
                 <div class="modal-header">
+                    <h4 class="modal-title">$('Finalize' if authorized_users else 'Cancel') all</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title">$('Finalize' if authorized_users else 'Cancel')all</h4>
                 </div>
                 <div class="modal-body">
                     <p>This will apply the action to all listed students. Do you want to continue ?</p>

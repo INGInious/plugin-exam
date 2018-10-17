@@ -10,12 +10,14 @@ $var title: $:course.get_name(user_manager.session_language()) - Contest setting
 $var Column: $:template_helper.call('course_admin_menu',course=course,current='exam')
 
 $def NavbarF():
-    <ol class="nav navbar-nav nav-breadcrumb">
-        <li><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
-        <li><a href="$get_homepath()/admin/$course.get_id()" title="Administration" data-toggle="tooltip" data-placement="bottom">
-            <i class="fa fa-user-secret"></i></a></li>
-        <li class="active"><a href="#"><i class="fa fa-gavel"></i> Exam accesses <span class="sr-only">(current)</span></a></li>
-    </ol>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
+            <li class="breadcrumb-item"><a href="$get_homepath()/admin/$course.get_id()" title="Administration" data-toggle="tooltip" data-placement="bottom">
+                <i class="fa fa-user-secret"></i></a></li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-gavel"></i> Exam accesses <span class="sr-only">(current)</span></a></li>
+        </ol>
+    </nav>
 $var Navbar: $:NavbarF()
 
 <h2>Exam access - <a href="/seb-quit">Quit SEB</a></h2>
@@ -34,13 +36,11 @@ $if errors is not None:
 $elif saved:
     <div class="alert alert-success" role="alert">Settings saved.</div>
 
-<div class="panel panel-default group">
-    <div class="panel-heading clearfix" role="tab">
-        <h4 class="panel-title">
+<div class="card mb-3">
+    <div class="card-header" role="tab">
             Exam access settings
-        </h4>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <form method="post">
             <input type="hidden" name="action" value="config" />
             <div class="row form-group">
