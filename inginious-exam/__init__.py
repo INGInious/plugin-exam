@@ -7,6 +7,7 @@
 
 import hashlib
 import os
+import bisect
 from collections import OrderedDict
 
 import web
@@ -229,11 +230,19 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_page("/exam-style.css", FakeCSSPage)
     plugin_manager.add_hook('css', lambda: "/exam-style.css")
     plugin_manager.add_page('/seb-quit', SebQuitPage)
-    plugin_manager.add_hook('javascript_header', lambda: javascript_header(plugin_manager.get_database(),
+    add_hook(plugin_manager, 'javascript_header', lambda: javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
-    plugin_manager.add_hook('main_menu', lambda template_helper: main_menu(template_helper,
+    add_hook(plugin_manager, 'main_menu', lambda template_helper: main_menu(template_helper,
                                                                                       plugin_manager.get_database(),
                                                                                       plugin_manager.get_user_manager(),
                                                                                       course_factory))
 
+
+def add_hook(plugin_manager, name, callback):
+    """ With no exception handling """
+    hook_list = plugin_manager._hooks.get(name, [])
+    add = callback, 0
+    pos = bisect.bisect_right(list(x[1] for x in hook_list), 0)
+    hook_list[pos:pos] = [add]
+    plugin_manager._hooks[name] = hook_list
