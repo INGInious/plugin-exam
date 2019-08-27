@@ -18,8 +18,6 @@ from inginious.frontend.pages.utils import INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
-user_status_cache = {}
-
 def check_key(course_key):
     if not course_key:
         return True
@@ -55,7 +53,6 @@ class ExamAdminPage(INGIniousAdminPage):
 
             for username in users:
                 self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content["seb_hash"]}}, upsert=True)
-                user_status_cache[(courseid, username)] = True
 
             saved = True
         elif input_data.get("action", "") == "cancel":
@@ -68,9 +65,6 @@ class ExamAdminPage(INGIniousAdminPage):
                 users = self.user_manager.get_course_registered_users(course, False)
             else:
                 users = [input_data["username"]]
-
-            for username in users:
-                user_status_cache[(courseid, username)] = False
 
             saved = True
 
@@ -127,7 +121,6 @@ class ExamPage(INGIniousAuthPage):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
                 self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content.get("seb_hash", "")}}, upsert=True)
-                user_status_cache[(courseid, username)] = True
 
         return self.display_page(course, error)
 
@@ -141,14 +134,7 @@ class ExamPage(INGIniousAuthPage):
 
 
 def get_user_status(courseid, username, database, user_manager):
-    if (courseid, username) not in user_status_cache:
-        if database.exam.find_one({"courseid": courseid, "username": user_manager.session_username()}):
-            user_status_cache[(courseid, username)] = True
-        else:
-            user_status_cache[(courseid, username)] = False
-
-    return user_status_cache[(courseid, username)]
-
+    return database.exam.find_one({"courseid": courseid, "username": username}) is not None
 
 def course_accessibility(course, default_value, course_factory, database, user_manager):
     descriptor = course.get_descriptor()
