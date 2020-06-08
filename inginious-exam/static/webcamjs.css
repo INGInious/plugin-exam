@@ -1,0 +1,11 @@
+#my_camera {
+    max-width: 100% !important;
+    max-height: fit-content !important;
+    height: unset !important;
+}
+
+video {
+    max-width: 100% !important;
+    max-height: inherit !important;
+    height: unset !important;
+}

@@ -1,1 +1,2 @@
 recursive-include inginious-exam *
+recursive-include inginious-exam/static *

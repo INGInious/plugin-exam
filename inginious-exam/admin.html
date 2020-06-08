@@ -1,5 +1,4 @@
-$def with (plugin_path, course, activated, password, authorized_key, mysebhash, thesebhash, data, errors, saved)
-
+$def with (plugin_path, course, course_content, mysebhash, thesebhash, data, errors, saved)
 $#
 $# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 $# more information about the licensing of this file.
@@ -44,32 +43,49 @@ $elif saved:
         <form method="post">
             <input type="hidden" name="action" value="config" />
             <div class="row form-group">
-                <label for="pass" class="col-sm-2 control-label">Exam active</label>
+                <label for="active" class="col-sm-2 control-label">Exam active</label>
                 <div class="col-sm-10">
                      <label>
                         <input type="radio" value="true" name="active"
-                            $if activated:
+                            $if course_content.get('exam_active', False):
                                 checked="checked"
                         /> Yes. This will override the course accessibility settings and prevent student unregistration.
                     </label><br/>
                     <label>
                         <input type="radio" value="false" name="active" id="active"
-                            $if not activated:
+                            $if not course_content.get('exam_active', False):
                                 checked="checked"
                         /> No
                     </label>
                 </div>
             </div>
             <div class="row form-group">
-                <label for="pass" class="col-sm-2 control-label">Finalization password</label>
+                <label for="webcam" class="col-sm-2 control-label">Join webcam snapshot in submissions input</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="password" name="password" placeholder="Leave empty for no check" value="$password">
+                     <label>
+                        <input type="radio" value="true" name="webcam"
+                            $if course_content.get('exam_webcam', False):
+                                checked="checked"
+                        /> Yes
+                    </label><br/>
+                    <label>
+                        <input type="radio" value="false" name="webcam" id="webcam"
+                            $if not course_content.get('exam_webcam', False):
+                                checked="checked"
+                        /> No
+                    </label>
                 </div>
             </div>
             <div class="row form-group">
-                <label for="pass" class="col-sm-2 control-label">Authorized SEB key</label>
+                <label for="password" class="col-sm-2 control-label">Finalization password</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$authorized_key">
+                    <input type="text" class="form-control" id="password" name="password" placeholder="Leave empty for no check" value="$course_content.get('exam_password', '')">
+                </div>
+            </div>
+            <div class="row form-group">
+                <label for="sebhash" class="col-sm-2 control-label">Authorized SEB key</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$course_content.get('seb_hash', '')">
                 </div>
             </div>
             <div>

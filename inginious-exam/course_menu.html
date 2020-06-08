@@ -5,18 +5,32 @@ $# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
 $# more information about the licensing of this file.
 $#
 
-$if not user_manager.has_staff_rights_on_course(course):
-    <h3>Examination</h3>
-    <div class="list-group mb-3">
-        <a href="" class="list-group-item list-group-item-info list-group-item-action" target="_blank">
-            <i class="fa fa-copy fa-fw"></i>
-            Duplicate window
-        </a>
+$if course.get_descriptor().get("exam_webcam", False):
+    <div class="row">
+        <div class="col-md-8">
+            <h3>Examination</h3>
+        </div>
+        <div class="col-md-4">
+            <div class="pull-right">
+               <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#my_camera">Toggle webcam</button>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3 collapse" id="my_camera"></div>
+
+<div class="list-group mb-3">
+    <a href="" class="list-group-item list-group-item-info list-group-item-action" target="_blank">
+        <i class="fa fa-copy fa-fw"></i>
+        Duplicate window
+    </a>
+    $if not user_manager.has_staff_rights_on_course(course):
         <a href="#" class="list-group-item list-group-item-danger list-group-item-action" data-toggle="modal" data-target="#examModal">
             <i class="fa fa-gavel fa-fw"></i>
             Finalize exam
         </a>
-    </div>
+</div>
+
+$if not user_manager.has_staff_rights_on_course(course):
     <div class="modal fade" id="examModal" role="dialog">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -43,3 +57,17 @@ $if not user_manager.has_staff_rights_on_course(course):
             </div>
         </div>
     </div>
+
+$if course.get_descriptor().get("exam_webcam", False):
+    <script>
+        Webcam.set({
+            width: 640,
+            height: 480,
+            image_format: 'jpeg',
+            jpeg_quality: 90
+        });
+        Webcam.on( 'error', function(err) {
+            console.log(err.message);
+        } );
+        Webcam.attach('#my_camera');
+    </script>
