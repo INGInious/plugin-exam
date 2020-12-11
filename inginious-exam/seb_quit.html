@@ -26,10 +26,13 @@ $#
     <link href="$get_homepath(True)/static/css/font-awesome.min.css" rel="stylesheet">
 
     <!-- INGInious Style -->
-    <link href="$get_homepath(True)/static/css/INGInious.css" rel="stylesheet">
+    <link href="$get_homepath(True)/static/css/INGInious.css?v2" rel="stylesheet">
 
     <!-- Codemirror Style -->
     <link href="$get_homepath(True)/static/css/codemirror.css" rel="stylesheet">
+
+    <!-- selectize -->
+    <link href="$get_homepath(True)/static/css/selectize.css" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="shortcut icon" href="$get_homepath(True)/static/icons/favicon.ico">
@@ -50,6 +53,19 @@ $#
     <meta name="msapplication-TileImage" content="$get_homepath(True)/static/icons/mstile-144x144.png">
     <meta name="msapplication-config" content="$get_homepath(True)/static/icons/browserconfig.xml">
 
+    $if sentry_io_url:
+        <script src="$get_homepath(True)/static/js/libs/sentry-io-bundle.min.js" type="text/javascript" charset="utf-8"></script>
+        <script>
+            Sentry.init({ dsn: "$sentry_io_url" });
+            $if user_manager.session_logged_in():
+                Sentry.configureScope(function(scope) {
+                    scope.setUser({
+                        "username": "$user_manager.session_username()",
+                        "realname": "$user_manager.session_realname()"
+                    })
+                });
+        </script>
+
     $if use_minified:
         <script src="$get_homepath(True)/static/js/all-minified.js"></script>
     $else:
@@ -61,13 +77,17 @@ $#
         <script src="$get_homepath(True)/static/js/libs/moment.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/libs/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/libs/bootstrap-datetimepicker.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src='$get_homepath(True)/static/js/libs/jquery-sortable.min.js' type="text/javascript" charset="utf-8"></script>
+        <script src='$get_homepath(True)/static/js/libs/Sortable.min.js' type="text/javascript" charset="utf-8"></script>
+        <script src="$get_homepath(True)/static/js/libs/jquery.twbsPagination.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="$get_homepath(True)/static/js/libs/selectize.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/checked-list-group.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/common.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/task.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/webapp.js" type="text/javascript" charset="utf-8"></script>
         <script src="$get_homepath(True)/static/js/studio.js" type="text/javascript" charset="utf-8"></script>
-        <script src="$get_homepath(True)/static/js/aggregations.js" type="text/javascript" charset="utf-8"></script>
+        <script src="$get_homepath(True)/static/js/audiences.js" type="text/javascript" charset="utf-8"></script>
+        <script src="$get_homepath(True)/static/js/groups.js" type="text/javascript" charset="utf-8"></script>
+        <script src="$get_homepath(True)/static/js/task_dispensers.js" type="text/javascript" charset="utf-8"></script>
 
     <script type="text/javascript">
         CodeMirror.modeURL = "$get_homepath(True)/static/js/codemirror/mode/%N/%N.js";
@@ -76,25 +96,36 @@ $#
 </head>
 
 <body>
-    <div class="navbar navbar-expand-sm bg-dark navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="$get_homepath()/index"><img src="$get_homepath(True)/static/images/header.png" alt="logo"/> INGInious</a>
-
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation" style="">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarResponsive">
-            $if user_manager.session_logged_in():
-                <ul class="nav navbar-nav navbar-right ml-auto">
-                    <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-user fa-fw"></i> $user_manager.session_realname()</a></li>
-                </ul>
-            </div>
+     <div class="row" id="inginious-top">
+        <div id="inginious-sidebar-top" class="col">
+            <a id="inginious-logo" class="col" href="$get_homepath()/index">
+                <div id="inginious-logo-text"><img src="$get_homepath(True)/static/images/header.png" alt="logo"/> INGInious</div>
+            </a>
+            <button class="col" onclick="$$('body').toggleClass('sidebar-state-0'); $$('body').toggleClass('sidebar-state-1');" id="inginious-sidebar-toggle" title="$:('Open menu')"><i class="fa fa-bars fa-fw"></i></button>
+        </div>
+        <div id="inginious-topbar" class="col flex-grow-1 flex-shrink-1">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/mycourses" title="" data-toggle="tooltip" data-placement="bottom" data-original-title="Mes cours"><i class="fa fa-th-list"></i></a></li>
+                    <li class="breadcrumb-item active"><a href="#">$course.get_name(user_manager.session_language())  <span class="sr-only">$:_("(current)")</span></a></li>
+                </ol>
+            </nav>
         </div>
     </div>
 
-    <div class="container-fluid" role="main" style="margin-top: 20px; margin-bottom: 65px;">
-                <h2>$course.get_name(user_manager.session_language()) - Examination</h2>
+     <div class="row" id="main-container">
+        <div id="inginious-sidebar" class="col">
+            <div id="inginious-sidebar-content">
+                <div class="list-group">
+                    $if user_manager.session_logged_in():
+                        <a class="list-group-item list-group-item-action dropdown-toggle" data-toggle="collapse" href="#collapseUserMenu" role="button" aria-expanded="false" aria-controls="collapseUserMenu">
+                            <i class="fa fa-user fa-fw"></i> $user_manager.session_realname() <span class="caret"></span>
+                        </a>
+                </div>
+            </div>
+        </div>
+        <div class="col flex-grow-1" id="main-content">
+            <h2>$course.get_name(user_manager.session_language()) - Examination</h2>
 
                 $if error:
                     <h4>$error <a href="$get_homepath()/course/$course.get_id()">Click here</a> to get back and retry.</h4>
@@ -106,17 +137,13 @@ $#
                     </ul>
                 $else:
                     <h4>Your exam has been marked as finished. <a href="$get_homepath()/">Click here</a> to get back to course list.</h4>
-    </div>
-    <div id="footer" class="navbar navbar-expand-sm bg-dark navbar-dark bg-dark">
-        <div class="container-fluid">
-            <p class="navbar-text">
-                &copy; 2014-2018 Universit&eacute; catholique de Louvain
-            </p>
-            <p class="navbar-text">
+
+            <div id="footer">
+                &copy; 2014-2020 Universit&eacute; catholique de Louvain.<br>
                 <a target="_blank" href="http://www.inginious.org" class="navbar-link">
                     $:_("INGInious is distributed under AGPL license")
                 </a>
-            </p>
+            </div>
         </div>
     </div>
 
