@@ -1,43 +1,49 @@
-$def with (plugin_path, course, course_content, mysebhash, thesebhash, data, errors, saved)
-$#
-$# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
-$# more information about the licensing of this file.
-$#
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{#  more information about the licensing of this file. #}
 
-$var title: $:course.get_name(user_manager.session_language()) - Contest settings
+{% extends "layout.html" %}
 
-$var Column: $:template_helper.call('course_admin_menu',course=course,current='exam')
+{% block  title %} {{ course.get_name(user_manager.session_language()) }} - Exam settings {% endblock %}
 
-$def NavbarF():
+{% block column %}
+    {{ template_helper.call('course_admin_menu',course=course,current='exam') | safe }}
+{% endblock %}
+
+{% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
-            <li class="breadcrumb-item"><a href="$get_homepath()/admin/$course.get_id()" title="Administration" data-toggle="tooltip" data-placement="bottom">
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/course/{{course.get_id()}}">{{course.get_name(user_manager.session_language())}}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/admin/{{course.get_id()}}" title="{{ _(' Administration') }}" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-gavel"></i> Exam accesses <span class="sr-only">(current)</span></a></li>
         </ol>
     </nav>
-$var Navbar: $:NavbarF()
+{% endblock %}
+
+{% block content %}
 
 <h2>Exam access - <a href="/seb-quit">Quit SEB</a></h2>
-$if thesebhash:
-        $ correct = (mysebhash == thesebhash)
-    <div class="alert $('alert-warning' if not correct else 'alert-success') alert-dismissible">
+{% if thesebhash %}
+    {% set correct = (mysebhash == thesebhash) %}
+    <div class="alert {{ 'alert-warning' if not correct else 'alert-success' }} alert-dismissible">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <p><strong>You are currently browing INGInious under Safe Exam Browser</strong></p>
-        <p>The computed request hash is : $mysebhash</p>
-        <p>The expected request hash is : $thesebhash</p>
+        <p>The computed request hash is : {{mysebhash}}</p>
+        <p>The expected request hash is : {{thesebhash}}</p>
     </div>
+{% endif %}
 
-$if errors is not None:
-    $for error in errors:
-        <div class="alert alert-danger" role="alert">$error</div>
-$elif saved:
+{% if errors is not none %}
+    {% for error in errors %}
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endfor %}
+{% elif saved %}
     <div class="alert alert-success" role="alert">Settings saved.</div>
+{% endif %}
 
 <div class="card mb-3">
     <div class="card-header" role="tab">
-            Exam access settings
+        Exam access settings
     </div>
     <div class="card-body">
         <form method="post">
@@ -47,14 +53,12 @@ $elif saved:
                 <div class="col-sm-10">
                      <label>
                         <input type="radio" value="true" name="active"
-                            $if course_content.get('exam_active', False):
-                                checked="checked"
+                            {{ 'checked="checked"'|safe if course_content.get('exam_active', False) }}
                         /> Yes. This will override the course accessibility settings and prevent student unregistration.
                     </label><br/>
                     <label>
                         <input type="radio" value="false" name="active" id="active"
-                            $if not course_content.get('exam_active', False):
-                                checked="checked"
+                            {{ 'checked="checked"'|safe if not course_content.get('exam_active', False) }}
                         /> No
                     </label>
                 </div>
@@ -64,14 +68,12 @@ $elif saved:
                 <div class="col-sm-10">
                      <label>
                         <input type="radio" value="true" name="webcam"
-                            $if course_content.get('exam_webcam', False):
-                                checked="checked"
+                            {{ 'checked="checked"'|safe if course_content.get('exam_webcam', False) }}
                         /> Yes
                     </label><br/>
                     <label>
                         <input type="radio" value="false" name="webcam" id="webcam"
-                            $if not course_content.get('exam_webcam', False):
-                                checked="checked"
+                            {{'checked="checked"'|safe if not course_content.get('exam_webcam', False) }}
                         /> No
                     </label>
                 </div>
@@ -79,13 +81,13 @@ $elif saved:
             <div class="row form-group">
                 <label for="password" class="col-sm-2 control-label">Finalization password</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="password" name="password" placeholder="Leave empty for no check" value="$course_content.get('exam_password', '')">
+                    <input type="text" class="form-control" id="password" name="password" placeholder="Leave empty for no check" value="{{course_content.get('exam_password', '')}}">
                 </div>
             </div>
             <div class="row form-group">
                 <label for="sebhash" class="col-sm-2 control-label">Authorized SEB key</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="$course_content.get('seb_hash', '')">
+                    <input type="text" class="form-control" id="sebhash" name="sebhash" placeholder="Leave empty for no check" value="{{course_content.get('seb_hash', '')}}">
                 </div>
             </div>
             <div>
@@ -101,9 +103,15 @@ $elif saved:
 
 <div class="row">
     <div class="col-md-6">
-        $:template_helper.get_custom_renderer(plugin_path, False).table(course, data, True)
+        {% with user_data=data, authorized_users=True %}
+            {% include "table.html" %}
+        {% endwith %}
     </div>
     <div class="col-md-6">
-        $:template_helper.get_custom_renderer(plugin_path, False).table(course, data, False)
+        {% with user_data=data, authorized_users=False %}
+            {% include "table.html" %}
+        {% endwith %}
     </div>
 </div>
+
+{% endblock %}

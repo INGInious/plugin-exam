@@ -1,9 +1,5 @@
-$def with()
-
-$#
-$# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for
-$# more information about the licensing of this file.
-$#
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{#  more information about the licensing of this file. #}
 
 <div class="row">
     <div class="col-md-8">
@@ -29,8 +25,8 @@ $#
 		console.log(err.message);
 	} );
 
-    $$(document).ready(function() {
-        $$("<input type='hidden' value='' />")
+    $(document).ready(function() {
+        $("<input type='hidden' value='' />")
             .attr("id", "picture")
             .attr("name", "@picture")
             .appendTo("#task");
@@ -38,7 +34,7 @@ $#
 
     setInterval(function() {
         Webcam.snap(function (data_uri) {
-            $$("#picture").val(data_uri);
+            $("#picture").val(data_uri);
         });
         console.log("snap");
     }, 3000);

@@ -89,9 +89,9 @@ class ExamAdminPage(INGIniousAdminPage):
         mysebhash = hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
         thesebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
 
-        tpl = self.template_helper.get_custom_renderer(PATH_TO_PLUGIN).admin
-
-        return tpl(PATH_TO_PLUGIN, course, course_content, mysebhash, thesebhash, user_data, errors, saved)
+        return self.template_helper.render("admin.html", template_folder=PATH_TO_PLUGIN, plugin_path=PATH_TO_PLUGIN,
+                                           course=course, course_content=course_content, mysebhash=mysebhash,
+                                           thesebhash=thesebhash, data=user_data, errors=errors, saved=saved)
 
 
 class ExamPage(INGIniousAuthPage):
@@ -128,8 +128,9 @@ class ExamPage(INGIniousAuthPage):
     def display_page(self, course, error=""):
         username = self.user_manager.session_username()
         if get_user_status(course.get_id(), username, self.database, self.user_manager) or error:
-            tpl = self.template_helper.get_custom_renderer(PATH_TO_PLUGIN, False).seb_quit
-            return tpl(PATH_TO_PLUGIN, course, error, web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""))
+            return self.template_helper.render("seb_quit.html", template_folder=PATH_TO_PLUGIN,
+                                               plugin_path=PATH_TO_PLUGIN, course=course, error=error,
+                                               using_seb=web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""))
         else:
             raise web.seeother("/course/" + course.get_id())
 
@@ -186,7 +187,8 @@ def course_menu(course, template_helper):
     """ Displays link to finalize exam on the course page"""
     course_content = course.get_descriptor()
     if course_content.get("exam_active", False):
-        return str(template_helper.get_custom_renderer(PATH_TO_PLUGIN, False).course_menu(course, course_content.get("exam_password", False)))
+        return template_helper.render("course_menu.html", template_folder=PATH_TO_PLUGIN, course=course,
+                                      password=course_content.get("exam_password", False))
     else:
         return ""
 
@@ -218,7 +220,7 @@ class SebQuitPage(object):
 def task_menu(course, task, template_helper):
     course_content = course.get_descriptor()
     if course_content.get("exam_active", False) and course_content.get("exam_webcam", False):
-        return str(template_helper.get_custom_renderer(PATH_TO_PLUGIN, False).task_menu())
+        return template_helper.render("task_menu.html", template_folder=PATH_TO_PLUGIN)
     else:
         return ""
 
