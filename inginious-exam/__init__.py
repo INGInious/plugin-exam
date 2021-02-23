@@ -11,8 +11,7 @@ import os
 import bisect
 from collections import OrderedDict
 
-import web
-
+from flask import request, redirect, abort, send_from_directory
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
 from inginious.frontend.pages.utils import INGIniousAuthPage, INGIniousPage
@@ -23,8 +22,8 @@ def check_key(course_key):
     if not course_key:
         return True
     else:
-        request_hash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
-        return hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_key).encode('utf-8')).hexdigest() == request_hash
+        request_hash = request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
+        return hashlib.sha256((request.url + course_key).encode('utf-8')).hexdigest() == request_hash
 
 
 class ExamAdminPage(INGIniousAdminPage):
@@ -39,7 +38,7 @@ class ExamAdminPage(INGIniousAdminPage):
         course, _ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
         error = []
         saved = False
-        input_data = web.input()
+        input_data = request.form
         course_content = self.course_factory.get_course_descriptor_content(courseid)
         if input_data.get("action", "") == "config":
             course_content["exam_password"] = input_data["password"]
@@ -86,8 +85,8 @@ class ExamAdminPage(INGIniousAdminPage):
         for entry in self.database.exam.find({"courseid": course.get_id(), "username": {"$in": list(user_data.keys())}}):
             user_data[entry['username']].update(entry)
 
-        mysebhash = hashlib.sha256((web.ctx.home + web.ctx.fullpath + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
-        thesebhash = web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
+        mysebhash = hashlib.sha256((request.url + course_content.get("seb_hash", "")).encode('utf-8')).hexdigest()
+        thesebhash = request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "")
 
         return self.template_helper.render("admin.html", template_folder=PATH_TO_PLUGIN, plugin_path=PATH_TO_PLUGIN,
                                            course=course, course_content=course_content, mysebhash=mysebhash,
@@ -102,10 +101,10 @@ class ExamPage(INGIniousAuthPage):
         course = self.course_factory.get_course(courseid)
         course_content = course.get_descriptor()
 
-        if course_content.get("exam_active", False) and web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
+        if course_content.get("exam_active", False) and request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
             return self.display_page(course)
         else:
-            raise web.seeother("/course/" + courseid)
+            return redirect("/course/" + courseid)
 
     def POST_AUTH(self, courseid):
         course = self.course_factory.get_course(courseid)
@@ -113,7 +112,7 @@ class ExamPage(INGIniousAuthPage):
         error = ""
 
         if course_content.get("exam_active", False):
-            input_data = web.input()
+            input_data = request.form
             username = self.user_manager.session_username()
             is_admin = self.user_manager.has_staff_rights_on_course(course)
             if input_data.get("password", "") != course_content.get("exam_password", ""):
@@ -130,9 +129,9 @@ class ExamPage(INGIniousAuthPage):
         if get_user_status(course.get_id(), username, self.database, self.user_manager) or error:
             return self.template_helper.render("seb_quit.html", template_folder=PATH_TO_PLUGIN,
                                                plugin_path=PATH_TO_PLUGIN, course=course, error=error,
-                                               using_seb=web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""))
+                                               using_seb=request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""))
         else:
-            raise web.seeother("/course/" + course.get_id())
+            return redirect("/course/" + course.get_id())
 
 
 def get_user_status(courseid, username, database, user_manager):
@@ -156,26 +155,26 @@ def course_accessibility(course, default_value, course_factory, database, user_m
 
 
 def main_menu(template_helper, database, user_manager, course_factory):
-    if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
+    if request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
         # We are in SEB : automatic registration
         for course in course_factory.get_all_courses().values():
             descriptor = course.get_descriptor()
             if descriptor.get("exam_active", False) and descriptor.get("seb_hash", "") and check_key(descriptor.get("seb_hash", "")):
                 if not user_manager.course_is_user_registered(course) and not user_manager.has_staff_rights_on_course(course):
                    user_manager.course_register_user(course, force=True)
-                raise web.seeother("/course/" + course.get_id())
+                raise abort(redirect("/course/" + course.get_id()))
     return ""
 
 
 def javascript_header(database, user_manager, course_factory):
-    if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
+    if request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", ""):
         # We are in SEB : check if the current hash corresponds to a finished active exam:
         finished_exams = list(database.exam.find({"username": user_manager.session_username()}))
         for finished_exam in finished_exams:
             if finished_exam.get("seb_hash", "") and check_key(finished_exam.get("seb_hash", "")):
                 finished_exam_course = course_factory.get_course(finished_exam["courseid"])
                 if finished_exam_course.get_descriptor().get("exam_active", False) and not user_manager.has_staff_rights_on_course(finished_exam_course):
-                    raise web.seeother("/exam/" + finished_exam["courseid"])
+                    raise abort(redirect("/exam/" + finished_exam["courseid"]))
     return ""
 
 def add_admin_menu(course):
@@ -195,27 +194,21 @@ def course_menu(course, template_helper):
 
 def css_header():
     return "/plugins/exam/static/exam-style.css" \
-        if web.ctx.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "") else None
+        if request.environ.get("HTTP_X_SAFEEXAMBROWSER_REQUESTHASH", "") else None
 
 
-class StaticMockPage(object):
-    # TODO: Replace by shared static middleware and let webserver serve the files
+class StaticMockPage(INGIniousPage):
     def GET(self, path):
-        if not os.path.abspath(PATH_TO_PLUGIN) in os.path.abspath(os.path.join(PATH_TO_PLUGIN, path)):
-            raise web.notfound()
-
-        try:
-            with open(os.path.join(PATH_TO_PLUGIN, "static", path), 'rb') as file:
-                return file.read()
-        except:
-            raise web.notfound()
+        return send_from_directory(os.path.join(PATH_TO_PLUGIN, "static"), path)
 
     def POST(self, path):
         return self.GET(path)
 
-class SebQuitPage(object):
+
+class SebQuitPage(INGIniousPage):
     def GET(self):
-        return "<html><body><p><a href='" + web.ctx.homepath +"/seb-quit'>Click here to exit</a></p></body></html>"
+        return "<html><body><p><a href='" + request.url_root +"seb-quit'>Click here to exit</a></p></body></html>"
+
 
 def task_menu(course, task, template_helper):
     course_content = course.get_descriptor()
@@ -232,8 +225,8 @@ def new_submission(submission, task_input, course_factory):
 
 def init(plugin_manager, course_factory, client, config):
     """ Init the plugin """
-    plugin_manager.add_page('/plugins/exam/static/(.+)', StaticMockPage)
-    plugin_manager.add_page("/admin/([^/]+)/exam", ExamAdminPage)
+    plugin_manager.add_page('/plugins/exam/static/<path:path>', StaticMockPage.as_view("examstaticpage"))
+    plugin_manager.add_page("/admin/<courseid>/exam", ExamAdminPage.as_view("examadminpage"))
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)
     plugin_manager.add_hook('course_accessibility', lambda course, default: course_accessibility(course, default,
                                                                                                  course_factory,
@@ -242,11 +235,11 @@ def init(plugin_manager, course_factory, client, config):
     plugin_manager.add_hook('course_allow_unregister', lambda course, default: False if course.get_descriptor().get("exam_active", False) else default)
     plugin_manager.add_hook('course_menu', course_menu)
     plugin_manager.add_hook('task_menu', task_menu)
-    plugin_manager.add_page("/exam/([^/]+)", ExamPage)
+    plugin_manager.add_page("/exam/<courseid>", ExamPage.as_view("exampage"))
 
     plugin_manager.add_hook('css', css_header)
     plugin_manager.add_hook('css', lambda : "/plugins/exam/static/webcamjs.css")
-    plugin_manager.add_page('/seb-quit', SebQuitPage)
+    plugin_manager.add_page('/seb-quit', SebQuitPage.as_view("sebquitpage"))
     add_hook(plugin_manager, 'javascript_header', lambda: javascript_header(plugin_manager.get_database(),
                                                                                                  plugin_manager.get_user_manager(), course_factory))
 
