@@ -173,7 +173,9 @@ def javascript_header(database, user_manager, course_factory):
         for finished_exam in finished_exams:
             if finished_exam.get("seb_hash", "") and check_key(finished_exam.get("seb_hash", "")):
                 finished_exam_course = course_factory.get_course(finished_exam["courseid"])
-                if finished_exam_course.get_descriptor().get("exam_active", False) and not user_manager.has_staff_rights_on_course(finished_exam_course):
+                if finished_exam_course.get_descriptor().get("exam_active", False) and \
+                        not user_manager.has_staff_rights_on_course(finished_exam_course) and \
+                        not request.endpoint == "exampage":
                     raise abort(redirect("/exam/" + finished_exam["courseid"]))
     return ""
 
