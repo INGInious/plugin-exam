@@ -53,7 +53,7 @@ class ExamAdminPage(INGIniousAdminPage):
                 users = [input_data["username"]]
 
             for username in users:
-                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content["seb_hash"]}}, upsert=True)
+                self.database.exam.find_one_and_update({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content["seb_hash"]}}, upsert=True)
 
             saved = True
         elif input_data.get("action", "") == "cancel":
@@ -120,7 +120,7 @@ class ExamPage(INGIniousAuthPage):
             elif not check_key(course_content.get("seb_hash", "")):
                 error = "Access denied."
             elif not is_admin and input_data.get("action", "") == "finalize":
-                self.database.exam.find_and_modify({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content.get("seb_hash", "")}}, upsert=True)
+                self.database.exam.find_one_and_update({"username": username, "courseid": courseid}, {"$set": {"seb_hash": course_content.get("seb_hash", "")}}, upsert=True)
 
         return self.display_page(course, error)
 
